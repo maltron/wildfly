@@ -27,6 +27,7 @@ gpgcheck=0" > /etc/yum.repos.d/wildfly.repo && \
     mv /wildfly-10.1.0.Final/* ${JBOSS_HOME} && \
     mkdir --parents ${JBOSS_HOME}/standalone/data && \
     mkdir --parents ${JBOSS_HOME}/standalone/log/ && touch ${JBOSS_HOME}/standalone/log/server.log && \
+    mkdir --parents ${JBOSS_HOME}/standalone/deployments-exploded/ROOT.war && \
     chown -R wildfly:wildfly ${JBOSS_HOME} && chgrp -R wildfly ${JBOSS_HOME} && chmod -R 777 ${JBOSS_HOME}/standalone && \
 ### MySQL: Create directory, move the jar file and create all the necessary content
     mkdir --parents ${JBOSS_HOME}/modules/com/mysql/main/ && \
@@ -35,7 +36,8 @@ gpgcheck=0" > /etc/yum.repos.d/wildfly.repo && \
     printf "<module xmlns=\"urn:jboss:module:1.1\" name=\"com.mysql\">\n\n    <resources>\n        <resource-root path=\"mysql-connector-java-5.1.40-bin.jar\"/>\n    </resources>\n\n    <dependencies>\n        <module name=\"javax.api\"/>\n        <module name=\"javax.transaction.api\"/>\n    </dependencies>\n</module>" > ${JBOSS_HOME}/modules/com/mysql/main/module.xml && \
 ### MySQL: Add the necessary content into standalone.xml to add a MySQL Driver
     sed -i '/                <drivers>/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ <driver name=\"MySQL\" module=\"com.mysql\">\n                        <driver-class>com.mysql.jdbc.Driver</driver-class>\n                        <xa-datasource-class>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</xa-datasource-class>\n                    </driver>' ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
-    sed -i '/            <datasources>/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ <datasource jndi-name=\"java:jboss/datasource/DataSourceDS\" pool-name=\"DataSourceDS\">\n                    <connection-url>jdbc:mysql://database:3306</connection-url>\n                    <driver>MySQL</driver>\n                    <security>\n                        <user-name>mauricio</user-name>\n                        <password>maltron</password>\n                    </security>\n                </datasource>' ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
+    sed -i '/            <datasources>/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ <datasource jndi-name=\"java:/jboss/datasource/DataSourceDS\" pool-name=\"DataSourceDS\">\n                    <connection-url>${env.DATASOURCE_CONNECTION}</connection-url>\n                    <driver>MySQL</driver>\n                    <security>\n                        <user-name>${env.DATASOURCE_USERNAME}</user-name>\n                        <password>${env.DATASOURCE_PASSWORD}</password>\n                    </security>\n                </datasource>' ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
+    sed -i "/        <subsystem xmlns=\"urn:jboss:domain:deployment-scanner:2.0\">/a \ \ \ \ \ \ \ \ \ \ \ \ <deployment-scanner name=\"deployments-exploded\" path=\"deployments-exploded\" relative-to=\"jboss.server.base.dir\" scan-enabled=\"true\" scan-interval=\"5000\" auto-deploy-zipped=\"false\" auto-deploy-exploded=\"true\" deployment-timeout=\"60\"/>" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 ### Adjust all the necessary permissions
 #    chown -R wildfly:wildfly ${JBOSS_HOME} && chmod -R 777 ${JBOSS_HOME}/standalone && \
 ### Clean Up
