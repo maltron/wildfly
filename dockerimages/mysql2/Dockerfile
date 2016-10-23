@@ -24,7 +24,10 @@ gpgcheck=0" > /etc/yum.repos.d/wildfly.repo && \
     groupadd --system wildfly --gid 1000 && \
     useradd --uid 1000 --system --gid wildfly --create-home \
              --home-dir ${JBOSS_HOME} --shell /sbin/nologin --comment "WildFly User" wildfly && chmod 755 ${JBOSS_HOME} && \
-    mv /wildfly-10.1.0.Final/* ${JBOSS_HOME} && chown -R wildfly:wildfly ${JBOSS_HOME} && chgrp -R wildfly ${JBOSS_HOME} && \
+    mv /wildfly-10.1.0.Final/* ${JBOSS_HOME} && \
+    mkdir --parents ${JBOSS_HOME}/standalone/data && \
+    mkdir --parents ${JBOSS_HOME}/standalone/log/ && touch ${JBOSS_HOME}/standalone/log/server.log && \
+    chown -R wildfly:wildfly ${JBOSS_HOME} && chgrp -R wildfly ${JBOSS_HOME} && chmod -R 777 ${JBOSS_HOME}/standalone && \
 ### MySQL: Create directory, move the jar file and create all the necessary content
     mkdir --parents ${JBOSS_HOME}/modules/com/mysql/main/ && \
     mv /mysql-connector-java-5.1.40/mysql-connector-java-5.1.40-bin.jar ${JBOSS_HOME}/modules/com/mysql/main/ && \
