@@ -12,8 +12,11 @@ enabled=1\n\
 gpgcheck=0" > /etc/yum.repos.d/wildfly.repo && \
      yum -y update && yum -y install unzip tar && yum clean all && \
 ### Download all the necessary packages
+### ORIGINAL JDK: http://download.oracle.com/otn-pub/java/jdk/8u112-b15/jdk-8u112-linux-x64.rpm
     curl -O -v -j -k -L -H "Cookie: oraclelicense=accept-securebackup-cookie" http://192.168.1.138/software/jdk-8u112-linux-x64.rpm && \
+### ORIGINAL WILDFLY: http://download.jboss.org/wildfly/10.1.0.Final/wildfly-10.1.0.Final.zip
     curl -O http://192.168.1.138/software/wildfly-10.1.0.Final.zip && \
+### ORIGINAL: MYSQL: http://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.40.zip
     curl -O -v -j -k -L -H "Cookie: oraclelicense=accept-securebackup-cookie" http://192.168.1.138/software/mysql-connector-java-5.1.40.zip && \
 ### Install Java Development Kit
     rpm -iv jdk-8u112-linux-x64.rpm && \
