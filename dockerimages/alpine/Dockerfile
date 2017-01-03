@@ -31,13 +31,13 @@ RUN addgroup -S ${USER} -g ${GROUP_ID} && adduser -u ${USER_ID} -S -G ${USER} -h
     sed -i '/            <datasources>/a \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ <datasource jndi-name=\"java:/jboss/datasource/DataSourceDS\" pool-name=\"DataSourceDS\"><#NEWLINE>                    <connection-url>${env.DATASOURCE_CONNECTION}</connection-url><#NEWLINE>                    <driver>MySQL</driver><#NEWLINE>                    <security><#NEWLINE>                        <user-name>${env.DATASOURCE_USERNAME}</user-name><#NEWLINE>                        <password>${env.DATASOURCE_PASSWORD}</password><#NEWLINE>                    </security><#NEWLINE>                </datasource>' ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
     sed -i "/        <subsystem xmlns=\"urn:jboss:domain:deployment-scanner:2.0\">/a \ \ \ \ \ \ \ \ \ \ \ \ <deployment-scanner name=\"deployments-exploded\" path=\"deployments-exploded\" relative-to=\"jboss.server.base.dir\" scan-enabled=\"true\" scan-interval=\"5000\" auto-deploy-zipped=\"false\" auto-deploy-exploded=\"true\" deployment-timeout=\"60\"/>" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 ### NEW LINE ADJUST: Replace all markers <#NEWLINE> with the actual character
-    sed -i '/s/<#NEWLINE>/\n/g' ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
+    sed -i "s/<#NEWLINE>/\n/g" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 ### Adjust all the necessary permissions
 #    chown -R wildfly:wildfly ${JBOSS_HOME} && chmod -R 777 ${JBOSS_HOME}/standalone && \
 ### Clean Up
 #    sed -i '2i JAVA_HOME=/usr/java/jdk1.8.0_112' ${JBOSS_HOME}/bin/standalone.sh && \
 #    sed -i '3i JBOSS_HOME=/opt/java/server/as/wildfly' ${JBOSS_HOME}/bin/standalone.sh && \
-    rm -rf /jdk-8u112-linux-x64.rpm && rm -rf /mysql-connector-java-5.1.40.zip && rm -rf /mysql-connector-java-5.1.40 && rm -rf wildfly-10.1.0.Final.zip && rm -rf wildfly-10.1.0.Final
+    rm -rf /mysql-connector-java-5.1.40.zip && rm -rf /mysql-connector-java-5.1.40 && rm -rf wildfly-10.1.0.Final.zip && rm -rf wildfly-10.1.0.Final
 
 EXPOSE 8080
 WORKDIR ${JBOSS_HOME}
