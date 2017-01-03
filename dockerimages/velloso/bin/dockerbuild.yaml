@@ -7,7 +7,7 @@
      openshift_master: "https://openshift.example.com:8443"
      docker_pusher_user: uploader
      docker_pusher_password: maltron
-     docker_image: openshift/wildfly-mysql:latest
+     docker_image: openshift/velloso:latest
   tasks:
      - name: Get Docker Registry's IP
        command: oc get service/docker-registry --output jsonpath="{.spec.clusterIP}" --namespace default
@@ -57,3 +57,4 @@
 
      - name: Push into Registry{{ ':' }} "docker push {{ docker_tag }}"
        command: docker push {{ docker_tag }}
+
