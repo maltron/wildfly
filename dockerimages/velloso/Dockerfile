@@ -17,9 +17,9 @@ LABEL io.k8s.description="Tomcat using Alpine's Linux with OpenJDK" \
 
 RUN addgroup -S ${group} -g ${gid} && \
     adduser -u ${uid} -S -G ${group} -D ${user} && \
+    mkdir -p /usr/local/tomcat/logs && mkdir -p /usr/local/tomcat/work && \
+    chmod -R 777 /usr/local/tomcat/conf /usr/local/tomcat/webapps /usr/local/tomcat/logs  /usr/local/tomcat/work && \
     chown -R tomcat:tomcat /usr/local/tomcat && \
-    mkdir -p /usr/local/tomcat/logs && \
-    chmod -R 777 /usr/local/tomcat/conf /usr/local/tomcat/webapps /usr/local/tomcat/logs && \
 ### Create all the necessary scripts for S2I and give the proper permissions
     mkdir -p /usr/libexec/s2i && \
     printf "#!/bin/sh\n\
