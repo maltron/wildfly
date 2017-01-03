@@ -1,5 +1,7 @@
 apiVersion: v1
 kind: Template
+metadata:
+  name: tomcat-velloso
 objects:
 - apiVersion: v1
   kind: ImageStream
@@ -22,11 +24,11 @@ objects:
       binary: {}
       type: Binary
     strategy:
-      dockerStrategy:
+      sourceStrategy:
         from:
           kind: ImageStreamTag
-          name: velloso:latest
-      type: Docker
+          name: tomcat7alpineos:latest
+      type: Source
 - apiVersion: v1
   kind: Service
   metadata:
