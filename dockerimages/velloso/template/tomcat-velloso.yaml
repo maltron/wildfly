@@ -21,14 +21,19 @@ objects:
         kind: ImageStreamTag
         name: ${APPLICATION_NAME}:latest
     source:
-      binary: {}
-      type: Binary
+      git:
+        uri: http://gogs.cloudapps.example.com/gogs/aplicacao.git
+      type: Git
     strategy:
       sourceStrategy:
         from:
           kind: ImageStreamTag
-          name: tomcat7alpineos:latest
+          name: tomcat7alpine:latest
+          namespace: openshift
       type: Source
+    triggers:
+    - type: ImageChange
+    - type: ConfigChange
 - apiVersion: v1
   kind: Service
   metadata:
@@ -94,6 +99,102 @@ objects:
     host: ${HOSTNAME_HTTP}
     to:
       name: ${APPLICATION_NAME}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      application: database
+    name: database
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      application: database
+    name: database
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: database:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      git:
+        uri: http://gogs.cloudapps.example.com/gogs/velloso.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: oracle-xe-11g:latest
+          namespace: openshift
+      type: Docker
+    triggers:
+    - type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      application: database
+    name: database
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: database
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          application: database
+          deploymentConfig: database
+        name: database
+      spec:
+        containers:
+        - env:
+          image: database
+          imagePullPolicy: Always
+          name: database
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 1521
+            protocol: TCP
+          - containerPort: 22
+            protocol: TCP
+          securityContext:
+            privileged: true
+        serviceAccount: velloso
+        serviceAccountName: velloso
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - database
+        from:
+          kind: ImageStreamTag
+          name: database:latest
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: velloso
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: Expoe uma porta de acesso ao Banco de Dados
+    name: database
+  spec:
+    ports:
+    - name: oracle
+      port: 1521
+      targetPort: 1521
+    selector:
+      name: database
 parameters:
 - description: Nome da Aplicação
   name: APPLICATION_NAME

@@ -28,5 +28,8 @@ mv /tmp/src/*.war /usr/local/tomcat/webapps" > /usr/libexec/s2i/assemble && \
 catalina.sh run\n" > /usr/libexec/s2i/run && \
     chmod 755 /usr/libexec/s2i/*
 
+COPY ojdbc7.jar /usr/local/tomcat/lib
+COPY context.xml /usr/local/tomcat/conf
+
 EXPOSE 8080
 USER ${uid}
