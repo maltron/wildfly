@@ -206,9 +206,9 @@ parameters:
   displayName: Repositório GIT da aplicação
   name: APLICATION_REPOSITORY_GIT
   required: true
-  value: http://gogs.cloudapps.example.com/gogs/aplicacao.git
+  value: https://github.com/fabiovelloso/app.git
 - description: 'Endereço do Repositório GIT onde se encontra os dados'
   displayName: Repositório GIT da Base de Dados 
   name: DATABASE_REPOSITORY_GIT
   required: true
-  value: http://gogs.cloudapps.example.com/gogs/velloso.git
+  value: https://github.com/fabiovelloso/cenario1.git
