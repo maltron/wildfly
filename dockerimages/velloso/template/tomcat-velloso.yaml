@@ -28,7 +28,7 @@ objects:
       sourceStrategy:
         from:
           kind: ImageStreamTag
-          name: tomcat7alpine:latest
+          name: tomcat7alpineos:latest
           namespace: openshift
       type: Source
     triggers:
