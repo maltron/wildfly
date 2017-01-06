@@ -22,7 +22,7 @@ objects:
         name: ${APPLICATION_NAME}:latest
     source:
       git:
-        uri: http://gogs.cloudapps.example.com/gogs/aplicacao.git
+        uri: ${APLICATION_REPOSITORY_GIT}
       type: Git
     strategy:
       sourceStrategy:
@@ -121,7 +121,7 @@ objects:
     runPolicy: Serial
     source:
       git:
-        uri: http://gogs.cloudapps.example.com/gogs/velloso.git
+        uri: ${DATABASE_REPOSITORY_GIT}
       type: Git
     strategy:
       dockerStrategy:
@@ -202,3 +202,13 @@ parameters:
   value: tomcat
 - description: 'Nome da Rota. Se deixar em branco, será <nome-da-aplicacao>-<projeto>.<dominio>'
   name: HOSTNAME_HTTP
+- description: 'Endereço do Repositório GIT onde se encontra a aplicação WAR'
+  displayName: Repositório GIT da aplicação
+  name: APLICATION_REPOSITORY_GIT
+  required: true
+  value: http://gogs.cloudapps.example.com/gogs/aplicacao.git
+- description: 'Endereço do Repositório GIT onde se encontra os dados'
+  displayName: Repositório GIT da Base de Dados 
+  name: DATABASE_REPOSITORY_GIT
+  required: true
+  value: http://gogs.cloudapps.example.com/gogs/velloso.git
