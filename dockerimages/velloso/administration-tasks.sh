@@ -9,7 +9,7 @@ oc delete template/tomcat-velloso --namespace openshift
 # Creating template into Project/Namespace Openshift
 oc create -f template/tomcat-velloso.yaml --namespace openshift
 # Import the image
-echo ">>> Importing Image: docker.io/fabiovelloso/tomcat7alpine:latest"
+echo ">>> Importing Image: docker.io/fabiovelloso/tomcat7alpineos:latest"
 oc import-image --confirm=true --insecure=true docker.io/fabiovelloso/tomcat7alpineos:latest --namespace openshift
 echo ">>> Importing Image: docker.io/wnameless/oracle-xe-11g:latest"
 oc import-image --confirm=true --insecure=true docker.io/wnameless/oracle-xe-11g:latest --namespace openshift

@@ -30,6 +30,9 @@ catalina.sh run\n" > /usr/libexec/s2i/run && \
 
 COPY ojdbc7.jar /usr/local/tomcat/lib
 COPY context.xml /usr/local/tomcat/conf
+COPY testconnection.jar /usr/local/tomcat/lib
+COPY checkconnection.sh /usr/local/tomcat/lib
+COPY mysql.jar /usr/local/tomcat/lib
 
 EXPOSE 8080
 USER ${uid}
