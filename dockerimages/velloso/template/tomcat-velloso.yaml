@@ -154,15 +154,25 @@ objects:
       spec:
         containers:
         - env:
+          - name: ORACLE_SID
+            value: XE
+          - name: ORACLE_ALLOW_REMOTE
+            value: "true"
           image: database
           imagePullPolicy: Always
           name: database
           ports:
           - containerPort: 8080
+            hostPort: 8080
+            name: web
             protocol: TCP
           - containerPort: 1521
+            hostPort: 49161
+            name: data
             protocol: TCP
           - containerPort: 22
+            hostPort: 49160
+            name: ssh
             protocol: TCP
           securityContext:
             privileged: true
@@ -190,9 +200,18 @@ objects:
     name: database
   spec:
     ports:
-    - name: oracle
+    - name: web
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: data
       port: 1521
+      protocol: TCP
       targetPort: 1521
+    - name: ssh
+      port: 22
+      protocol: TCP
+      targetPort: 22
     selector:
       name: database
 parameters:
