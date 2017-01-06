@@ -213,7 +213,7 @@ objects:
       protocol: TCP
       targetPort: 22
     selector:
-      name: database
+      deploymentConfig: database
 parameters:
 - description: Nome da Aplicação
   name: APPLICATION_NAME
