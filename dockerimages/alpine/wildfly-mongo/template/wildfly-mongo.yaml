@@ -1,0 +1,191 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: wildfly-mongo
+objects:
+### Application Layer: WildFly
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      type: application
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}-app
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: The web server's http port.
+    labels:
+      type: application
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}-app
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      type: application
+      deploymentConfig: ${APPLICATION_NAME}
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      type: application
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}-app
+  spec:
+    replicas: 1
+    selector:
+      type: application
+      application: ${APPLICATION_NAME}
+      deploymentConfig: ${APPLICATION_NAME}-app
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          type: application
+          application: ${APPLICATION_NAME}
+          deploymentConfig: ${APPLICATION_NAME}-app
+        name: ${APPLICATION_NAME}-app
+      spec:
+        containers:
+        - env:
+          image: wildfly-alpine:latest
+          imagePullPolicy: IfNotPresent
+          name: ${APPLICATION_NAME}-app
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APPLICATION_NAME}-app
+        from:
+          kind: ImageStreamTag
+          name: wildfly-alpine:latest
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  id: ${APPLICATION_NAME}-app
+  kind: Route
+  metadata:
+    annotations:
+      description: Route for application's http service.
+    labels:
+      type: application
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}-app
+  spec:
+    to:
+      name: ${APPLICATION_NAME}-app
+### Persistent Layer: MongoDB
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      type: database
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}-data
+  spec:
+    replicas: 1
+    selector:
+      type: database
+      application: ${APPLICATION_NAME}
+      deploymentConfig: ${APPLICATION_NAME}-data
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          type: database
+          application: ${APPLICATION_NAME}
+          deploymentConfig: ${APPLICATION_NAME}-data
+        name: ${APPLICATION_NAME}-data
+      spec:
+        containers:
+        - env:
+          - name: MONGODB_USER
+            value: ${DB_USERNAME}
+          - name: MONGODB_PASSWORD
+            value: ${DB_PASSWORD}
+          - name: MONGODB_DATABASE
+            value: ${DB_DATABASE}
+          - name: MONGODB_ADMIN_PASSWORD
+            value: ${DB_ADMIN_PASSWORD}
+          - name: MONGODB_NOPREALLOC
+            value: ${MONGODB_NOPREALLOC}
+          - name: MONGODB_SMALLFILES
+            value: ${MONGODB_SMALLFILES}
+          - name: MONGODB_QUIET
+            value: ${MONGODB_QUIET}
+          image: mongodb
+          imagePullPolicy: IfNotPresent
+          name: ${APPLICATION_NAME}-data
+          ports:
+          - containerPort: 27017
+            protocol: TCP
+        terminationGracePeriodSeconds: 60
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APPLICATION_NAME}-data
+        from:
+          kind: ImageStreamTag
+          name: mongodb:latest
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      description: The database server's port.
+    labels:
+      type: database
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}-data
+  spec:
+    ports:
+    - port: 27017
+      targetPort: 27017
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}-data
+parameters:
+- description: Application's name
+  name: APPLICATION_NAME
+  required: true
+  value: microservice
+- description: Disable data file preallocation.
+  name: MONGODB_NOPREALLOC
+- description: Set MongoDB to use a smaller default data file size.
+  name: MONGODB_SMALLFILES
+- description: Runs MongoDB in a quiet mode that attempts to limit the amount of output.
+  name: MONGODB_QUIET
+- description: Database user name
+  from: user[a-zA-Z0-9]{3}
+  generate: expression
+  name: DB_USERNAME
+  required: true
+- description: Database user password
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  name: DB_PASSWORD
+  required: true
+- description: Database admin password
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  name: DB_ADMIN_PASSWORD
+  required: true
+- description: Database name
+  name: DB_DATABASE
+  required: true
+  value: root
+
+
+
