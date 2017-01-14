@@ -2,22 +2,17 @@ apiVersion: v1
 kind: Template
 metadata:
   name: wildfly-mongo
+message: You can connect to the database using MongoDB connection URL mongodb://${DB_USERNAME}:${DB_PASSWORD}@${APPLICATION_NAME}-data:27017/${DB_DATABASE}
 objects:
 ### Application Layer: WildFly
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    labels:
-      type: application
-      application: ${APPLICATION_NAME}
-    name: ${APPLICATION_NAME}-app
 - apiVersion: v1
   kind: Service
   metadata:
     annotations:
+      service.alpha.openshift.io/dependencies: '[{"name":"${APPLICATION_NAME}-data","namespace":"","kind":"Service"}]'
       description: The web server's http port.
     labels:
-      type: application
+      component: application-server
       application: ${APPLICATION_NAME}
     name: ${APPLICATION_NAME}-app
   spec:
@@ -25,19 +20,20 @@ objects:
     - port: 8080
       targetPort: 8080
     selector:
-      type: application
-      deploymentConfig: ${APPLICATION_NAME}
+      component: application-server
+      application: ${APPLICATION_NAME}
+      deploymentConfig: ${APPLICATION_NAME}-app
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
     labels:
-      type: application
+      component: application-server
       application: ${APPLICATION_NAME}
     name: ${APPLICATION_NAME}-app
   spec:
     replicas: 1
     selector:
-      type: application
+      component: application-server
       application: ${APPLICATION_NAME}
       deploymentConfig: ${APPLICATION_NAME}-app
     strategy:
@@ -45,16 +41,24 @@ objects:
     template:
       metadata:
         labels:
-          type: application
+          component: application-server
           application: ${APPLICATION_NAME}
           deploymentConfig: ${APPLICATION_NAME}-app
         name: ${APPLICATION_NAME}-app
       spec:
         containers:
         - env:
-          image: wildfly-alpine:latest
+          - name: DB_SERVICE
+            value: ${APPLICATION_NAME}-data
+          - name: DB_USERNAME
+            value: ${DB_USERNAME}
+          - name: DB_PASSWORD
+            value: ${DB_PASSWORD}
+          - name: DB_DATABASE
+            value: ${DB_DATABASE}
+          image: ' '
           imagePullPolicy: IfNotPresent
-          name: ${APPLICATION_NAME}-app
+          name: wildfly-mongo-alpine
           ports:
           - containerPort: 8080
             name: http
@@ -63,7 +67,7 @@ objects:
     - imageChangeParams:
         automatic: true
         containerNames:
-        - ${APPLICATION_NAME}-app
+        - wildfly-mongo-alpine
         from:
           kind: ImageStreamTag
           name: wildfly-alpine:latest
@@ -77,24 +81,27 @@ objects:
     annotations:
       description: Route for application's http service.
     labels:
-      type: application
+      component: application-server
       application: ${APPLICATION_NAME}
     name: ${APPLICATION_NAME}-app
   spec:
+    port:
+      targetPort: 8080
     to:
+      kind: Service
       name: ${APPLICATION_NAME}-app
 ### Persistent Layer: MongoDB
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
     labels:
-      type: database
+      component: database
       application: ${APPLICATION_NAME}
     name: ${APPLICATION_NAME}-data
   spec:
     replicas: 1
     selector:
-      type: database
+      component: database
       application: ${APPLICATION_NAME}
       deploymentConfig: ${APPLICATION_NAME}-data
     strategy:
@@ -102,7 +109,7 @@ objects:
     template:
       metadata:
         labels:
-          type: database
+          component: database
           application: ${APPLICATION_NAME}
           deploymentConfig: ${APPLICATION_NAME}-data
         name: ${APPLICATION_NAME}-data
@@ -123,22 +130,38 @@ objects:
             value: ${MONGODB_SMALLFILES}
           - name: MONGODB_QUIET
             value: ${MONGODB_QUIET}
-          image: mongodb
+          image: ' '
           imagePullPolicy: IfNotPresent
-          name: ${APPLICATION_NAME}-data
+          livenessProbe:
+            initialDelaySeconds: 30
+            tcpSocket:
+              port: 27017
+            timeoutSeconds: 1
+          name: mongodb
           ports:
           - containerPort: 27017
             protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -i
+              - -c
+              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+                --eval="quit()"
+            initialDelaySeconds: 3
+            timeoutSeconds: 1
         terminationGracePeriodSeconds: 60
     triggers:
     - imageChangeParams:
         automatic: true
         containerNames:
-        - ${APPLICATION_NAME}-data
+        - mongodb
         from:
           kind: ImageStreamTag
           name: mongodb:latest
           namespace: openshift
+        lastTriggeredImage: ""
       type: ImageChange
     - type: ConfigChange
 - apiVersion: v1
@@ -147,7 +170,7 @@ objects:
     annotations:
       description: The database server's port.
     labels:
-      type: database
+      component: database
       application: ${APPLICATION_NAME}
     name: ${APPLICATION_NAME}-data
   spec:
@@ -155,6 +178,8 @@ objects:
     - port: 27017
       targetPort: 27017
     selector:
+      component: database
+      application: ${APPLICATION_NAME}
       deploymentConfig: ${APPLICATION_NAME}-data
 parameters:
 - description: Application's name
@@ -185,7 +210,7 @@ parameters:
 - description: Database name
   name: DB_DATABASE
   required: true
-  value: root
+  value: sampledb
 
 
 
