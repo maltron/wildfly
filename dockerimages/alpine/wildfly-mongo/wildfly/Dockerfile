@@ -10,7 +10,7 @@ ENV JBOSS_HOME=/opt/java/server/as/wildfly \
 RUN addgroup -S ${USER} -g ${GROUP_ID} && adduser -u ${USER_ID} -S -G ${USER} -h /home/${USER} ${USER} && chmod 755 /home/${USER} && \
     apk upgrade --update && apk add --update libstdc++ curl bash && \
 ### ORIGINAL WILDFLY: http://download.jboss.org/wildfly/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.zip
-    curl -O http://192.168.1.138/software/wildfly-${WILDFLY_VERSION}.zip && \
+    curl -O http://download.jboss.org/wildfly/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.zip && \
 ### Unpack all the necessary files
     unzip wildfly-${WILDFLY_VERSION}.zip && \
 ### WildFly: Create directory, wildfly user and move things into place
