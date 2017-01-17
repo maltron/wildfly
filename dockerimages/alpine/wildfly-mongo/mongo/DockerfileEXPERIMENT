@@ -1,0 +1,19 @@
+FROM alpine:latest
+
+ENV MONGO_HOME=/var/lib/mongodb \
+    GROUP_ID=1001 \
+    USER_ID=1001 \
+    USER=mongo \
+    MONGODB_VERSION=3.2 \
+    # Set paths to avoid hard-coding them in scripts.
+    #HOME=/var/lib/mongodb \
+    CONTAINER_SCRIPTS_PATH=/usr/share/container-scripts/mongodb
+
+ADD root /
+
+### Create a user and group
+RUN addgroup -S ${USER} -g ${GROUP_ID} && \
+    adduser -u ${USER_ID} -S -G ${USER} -h ${MONGO_HOME} ${USER} && \
+    chmod 755 -R ${MONGO_HOME} && \
+### Data Directory
+    mkdir -p ${MONGO_HOME}/data && chown -R mongo:mongo ${MONGO_HOME}/data
