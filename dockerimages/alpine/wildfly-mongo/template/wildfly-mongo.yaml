@@ -56,6 +56,12 @@ objects:
             value: ${DB_PASSWORD}
           - name: DB_DATABASE
             value: ${DB_DATABASE}
+          - name: BROKER_ADDRESS
+            value: tcp://${BROKER_ADDRESS}:61616?jms.rmIdFromConnectionId=true
+          - name: BROKER_USERNAME
+            value: ${BROKER_USERNAME}
+          - name: BROKER_PASSWORD
+            value: ${BROKER_PASSWORD}
           image: ' '
           imagePullPolicy: IfNotPresent
           name: wildfly-mongo-alpine
@@ -211,6 +217,15 @@ parameters:
   name: DB_DATABASE
   required: true
   value: sampledb
+- name: BROKER_ADDRESS
+  required: true
+  value: broker-amq-tcp:61616
+- name: BROKER_USERNAME
+  required: true
+  value: mauricio
+- name: BROKER_PASSWORD
+  required: true
+  value: maltron
 
 
 
