@@ -34,7 +34,7 @@ RUN addgroup -S ${USER} -g ${GROUP_ID} && adduser -u ${USER_ID} -S -G ${USER} -h
 ###           Step #5: Add a MDB instance into standalone.xml
     sed -i "/            <[/]session-bean>/a \ \ \ \ \ \ \ \ \ \ \ \ \<mdb><#NEWLINE>                <resource-adapter-ref resource-adapter-name=\"activemq\"/><#NEWLINE>                <bean-instance-pool-ref pool-name=\"mdb-strict-max-pool\"/><#NEWLINE>            </mdb>" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 ###           Step #6: Add the Resource Adapter definition into standalone.xml
-    sed -i "s|<subsystem xmlns=\"urn:jboss:domain:resource-adapters:4.0\"/>|<subsystem xmlns=\"urn:jboss:domain:resource-adapters:4.0\"><#NEWLINE>            <resource-adapters><#NEWLINE>                <resource-adapter id=\"activemq\"><#NEWLINE>                    <module slot=\"main\" id=\"org.apache.activemq\"/><#NEWLINE>                    <transaction-support>XATransaction</transaction-support><#NEWLINE>                    <config-property name=\"ServerUrl\"><#NEWLINE>                        \${env.BROKER_ADDRESS}<#NEWLINE>                    </config-property><#NEWLINE>                    <config-property name=\"UserName\"><#NEWLINE>                        \${env.BROKER_USERNAME}<#NEWLINE>                    </config-property><#NEWLINE>                    <config-property name=\"Password\"><#NEWLINE>                        \${env.BROKER_PASSWORD}<#NEWLINE>                    </config-property><#NEWLINE>                    <connection-definitions><#NEWLINE>                        <connection-definition class-name=\"org.apache.activemq.ra.ActiveMQManagedConnectionFactory\" jndi-name=\"java:/AMQConnectionFactory\" enabled=\"true\" use-java-context=\"true\" pool-name=\"ConnectionFactory\"><#NEWLINE>                              <recovery no-recovery=\"false\"><#NEWLINE>                                 <recover-credential><#NEWLINE>                                          <user-name>\${env.BROKER_USERNAME}</user-name><#NEWLINE>                                          <password>\${env.BROKER_PASSWORD}</password><#NEWLINE>                                 </recover-credential><#NEWLINE>                         </recovery><#NEWLINE>                   </connection-definition><#NEWLINE>                    </connection-definitions><#NEWLINE>                    <admin-objects><#NEWLINE>                        <admin-object class-name=\"org.apache.activemq.command.ActiveMQTopic\" jndi-name=\"topic/mytopic\" use-java-context=\"true\" pool-name=\"topic_evereg\"><#NEWLINE>                            <config-property name=\"PhysicalName\"><#NEWLINE>                                exampleTopic<#NEWLINE>                            </config-property><#NEWLINE>                        </admin-object><#NEWLINE>                        <admin-object class-name=\"org.apache.activemq.command.ActiveMQQueue\" jndi-name=\"queue/test-queue\" use-java-context=\"true\" pool-name=\"test_queue\"><#NEWLINE>                            <config-property name=\"PhysicalName\"><#NEWLINE>                                testQueue<#NEWLINE>                            </config-property><#NEWLINE>                        </admin-object><#NEWLINE>                    </admin-objects><#NEWLINE>                </resource-adapter><#NEWLINE>            </resource-adapters><#NEWLINE>        </subsystem>|" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
+    sed -i "s|<subsystem xmlns=\"urn:jboss:domain:resource-adapters:4.0\"/>|<subsystem xmlns=\"urn:jboss:domain:resource-adapters:4.0\"><#NEWLINE>            <resource-adapters><#NEWLINE>                <resource-adapter id=\"activemq\"><#NEWLINE>                    <module slot=\"main\" id=\"org.apache.activemq\"/><#NEWLINE>                    <transaction-support>XATransaction</transaction-support><#NEWLINE>                    <config-property name=\"ServerUrl\"><#NEWLINE>                        \${env.BROKER_ADDRESS}<#NEWLINE>                    </config-property><#NEWLINE>                    <config-property name=\"UserName\"><#NEWLINE>                        \${env.BROKER_USERNAME}<#NEWLINE>                    </config-property><#NEWLINE>                    <config-property name=\"Password\"><#NEWLINE>                        \${env.BROKER_PASSWORD}<#NEWLINE>                    </config-property><#NEWLINE>                    <connection-definitions><#NEWLINE>                        <connection-definition class-name=\"org.apache.activemq.ra.ActiveMQManagedConnectionFactory\" jndi-name=\"java:/AMQConnectionFactory\" enabled=\"true\" use-java-context=\"true\" pool-name=\"ConnectionFactory\"><#NEWLINE>                              <recovery no-recovery=\"false\"><#NEWLINE>                                 <recover-credential><#NEWLINE>                                          <user-name>\${env.BROKER_USERNAME}</user-name><#NEWLINE>                                          <password>\${env.BROKER_PASSWORD}</password><#NEWLINE>                                 </recover-credential><#NEWLINE>                         </recovery><#NEWLINE>                   </connection-definition><#NEWLINE>                    </connection-definitions><#NEWLINE>                    <admin-objects><!-- #ADMIN OBJECTS --><#NEWLINE>                    </admin-objects><#NEWLINE>                </resource-adapter><#NEWLINE>            </resource-adapters><#NEWLINE>        </subsystem>|" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
     sed -i "s/<#NEWLINE>/\n/g" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 
 ###           Step #7: Adding Messaging Module extension, which it's going to make JMS files available to the Java Container
@@ -42,6 +42,39 @@ RUN addgroup -S ${USER} -g ${GROUP_ID} && adduser -u ${USER_ID} -S -G ${USER} -h
     sed -i "/        <subsystem xmlns=\"urn:jboss:domain:pojo:1.0\"[/]>/i \ \ \ \ \ \ \ \ <subsystem xmlns=\"urn:jboss:domain:messaging-activemq:1.0\"/>" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 ###           Step #8: Remove active's RAR file
     rm -rf activemq-rar-${ACTIVEMQ_RA_VERSION}.rar && \
+### WildFly: Create the JBoss/WildFly Launch script
+###          This script will look into variables BROKER_TOPICS and BROKER_QUEUES and replace with the proper objects
+###          inside the configuration file standalone.xml
+    printf "#!/bin/sh<#NEWLINE>\
+<#NEWLINE>\
+## Check if there any Topics or Queues to be created<#NEWLINE>\
+destination=\"\"<#NEWLINE>\
+if [ -n \"\${BROKER_TOPICS}\" ] || [ -n \"\${BROKER_QUEUES}\" ]; then<#NEWLINE>\
+   ## Is there any topic ?<#NEWLINE>\
+   if [ -n \"\${BROKER_TOPICS}\" ]; then<#NEWLINE>\
+      for topic in \$(echo \${BROKER_TOPICS} | sed 's/,/ /g'); do <#NEWLINE>\
+         destination=\"\${destination}<admin-object class-name=\\\"org.apache.activemq.command.ActiveMQTopic\\\" jndi-name=\\\"topic/\${topic}\\\" use-java-context=\\\"true\\\" pool-name=\\\"pool_\${topic}\\\"><config-property name=\\\"PhysicalName\\\">topic/\${topic}</config-property></admin-object>\"<#NEWLINE>\
+      done<#NEWLINE>\
+   fi<#NEWLINE>\
+   ## Is there any queue ?<#NEWLINE>\
+   if [ -n \"\${BROKER_QUEUES}\" ]; then<#NEWLINE>\
+      for queue in \$(echo \${BROKER_QUEUES} | sed 's/,/ /g'); do<#NEWLINE>\
+         destination=\"\${destination}<admin-object class-name=\\\"org.apache.activemq.command.ActiveMQQueue\\\" jndi-name=\\\"queue/\${queue}\\\" use-java-context=\\\"true\\\" pool-name=\\\"pool_\${queue}\\\"><config-property name=\\\"PhysicalName\\\">queue/\${queue}</config-property></admin-object>\"<#NEWLINE>\
+      done<#NEWLINE>\
+   fi<#NEWLINE>\
+fi<#NEWLINE>\
+<#NEWLINE>\
+## If there is any destination, replace into the file<#NEWLINE>\
+## ATTENTION: The marker it must exist in order to properly function<#NEWLINE>\
+##            Marker: <!-- #ADMIN OBJECTS --><#NEWLINE>\
+if [ -n \"\${destination}\" ]; then<#NEWLINE>\
+   sed -i \"s|<[!]-- #ADMIN OBJECTS -->|\${destination}|\" \${JBOSS_HOME}/standalone/configuration/standalone.xml<#NEWLINE>\
+fi<#NEWLINE>\
+<#NEWLINE>\
+## Execute WildFly/JBoss<#NEWLINE>\
+exec \$JBOSS_HOME/bin/standalone.sh -c standalone.xml -b 0.0.0.0 -bmanagement 127.0.0.1<#NEWLINE>" > ${JBOSS_HOME}/bin/openshift-launch.sh && \
+    sed -i "s/<#NEWLINE>/\n/g" ${JBOSS_HOME}/bin/openshift-launch.sh && \
+    chmod a+x ${JBOSS_HOME}/bin/openshift-launch.sh && \
 ### WildFly: Turn the ownership to WildFly user
     chown -R wildfly:wildfly ${JBOSS_HOME} && chgrp -R wildfly ${JBOSS_HOME} && chmod -R 777 ${JBOSS_HOME}/standalone && \
 ### WildFly: Creating a Node Identifier information
@@ -55,4 +88,4 @@ RUN addgroup -S ${USER} -g ${GROUP_ID} && adduser -u ${USER_ID} -S -G ${USER} -h
 EXPOSE 8080
 WORKDIR ${JBOSS_HOME}
 USER wildfly
-CMD ["/opt/java/server/as/wildfly/bin/standalone.sh","-b","0.0.0.0"]
+CMD ["/opt/java/server/as/wildfly/bin/openshift-launch.sh"]
