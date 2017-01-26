@@ -62,6 +62,10 @@ objects:
             value: ${BROKER_USERNAME}
           - name: BROKER_PASSWORD
             value: ${BROKER_PASSWORD}
+          - name: BROKER_TOPICS
+            value: ${BROKER_TOPICS}
+          - name: BROKER_QUEUES
+            value: ${BROKER_QUEUES}
           image: ' '
           imagePullPolicy: IfNotPresent
           name: wildfly-mongo-alpine
@@ -226,6 +230,15 @@ parameters:
 - name: BROKER_PASSWORD
   required: true
   value: maltron
+- name: BROKER_TOPICS
+  description: Topic names, separated by commas. These topics will be automatically
+    created when the broker starts.
+  value: exampleTopic
+- name: BROKER_QUEUES
+  description: Queues names, separated by commas. These topics will be automatically
+    created when the broker starts.
+  value: exampleQueue
+
 
 
 
