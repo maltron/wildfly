@@ -78,7 +78,7 @@ exec \$JBOSS_HOME/bin/standalone.sh -c standalone.xml -b 0.0.0.0 -bmanagement 12
 ### WildFly: Turn the ownership to WildFly user
     chown -R wildfly:wildfly ${JBOSS_HOME} && chgrp -R wildfly ${JBOSS_HOME} && chmod -R 777 ${JBOSS_HOME}/standalone && \
 ### WildFly: Creating a Node Identifier information
-    sed -i "s/<core-environment>/<core-environment node-identifier=\"\${env.HOSTNAME}\">/" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
+    sed -i "s/<core-environment>/<core-environment node-identifier=\"wildfly-msa\">/" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 ### Wildfly: Modify file standalone.xml to enable exploded deployment in directory deployments-exploded
     sed -i "/        <subsystem xmlns=\"urn:jboss:domain:deployment-scanner:2.0\">/a \ \ \ \ \ \ \ \ \ \ \ \ <deployment-scanner name=\"deployments-exploded\" path=\"deployments-exploded\" relative-to=\"jboss.server.base.dir\" scan-enabled=\"true\" scan-interval=\"5000\" auto-deploy-zipped=\"false\" auto-deploy-exploded=\"true\" deployment-timeout=\"60\"/>" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 ### Wildfly: 
