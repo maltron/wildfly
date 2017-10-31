@@ -66,24 +66,13 @@ objects:
             value: ${BROKER_TOPICS}
           - name: BROKER_QUEUES
             value: ${BROKER_QUEUES}
-          image: ' '
+          image: docker.io/maltron/wildfly-alpine:latest
           imagePullPolicy: IfNotPresent
           name: wildfly-mongo-alpine
           ports:
           - containerPort: 8080
             name: http
             protocol: TCP
-    triggers:
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - wildfly-mongo-alpine
-        from:
-          kind: ImageStreamTag
-          name: wildfly-alpine:latest
-          namespace: openshift
-      type: ImageChange
-    - type: ConfigChange
 - apiVersion: v1
   id: ${APPLICATION_NAME}-app
   kind: Route
