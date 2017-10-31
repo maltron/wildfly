@@ -4,11 +4,21 @@
   hosts: localhost
   connection: local
   vars:
-     openshift_master: "https://openshift.example.com:8443"
+     openshift_master: "https://openshift.default.svc.cluster.local"
      docker_pusher_user: uploader
      docker_pusher_password: maltron
-     docker_image: openshift/wildfly-alpine:latest
+     docker_image: openshift/test-alpine:latest
   tasks:
+     - name: Log with Docker's Pusher in order to get his token
+       command: oc login --username={{ docker_pusher_user }} --password={{ docker_pusher_password }} --insecure-skip-tls-verify
+
+     - name: Get Docker Pusher's Token
+       command: oc whoami -t
+       register: docker_pusher_token
+
+     - name: Return to a System Admin User
+       command: oc login --username=system:admin
+
      - name: Get Docker Registry's IP
        command: oc get service/docker-registry --output jsonpath="{.spec.clusterIP}" --namespace default
        register: docker_registry_ip
@@ -26,24 +36,11 @@
      - name: Setting Docker's TAG{{ ':' }} {{ docker_registry }}/{{ docker_image }} 
        set_fact: docker_tag={{ docker_registry}}/{{ docker_image }}
 
-     - name: Return to a System Admin User
-       command: oc login --username=system:admin --insecure-skip-tls-verify --server={{ openshift_master }}
-
      - name: Give the Docker's Pusher a role named 'system:image-builder'
        command: oadm policy add-role-to-user system:image-builder {{ docker_pusher_user }}
 
      - name: Give the Docker's Pusher a Administrative privileges into Namespace OpenShift
        command: oadm policy add-role-to-user admin {{ docker_pusher_user }} --namespace openshift
-
-     - name: Log with Docker's Pusher in order to get his token
-       command: oc login --username={{ docker_pusher_user }} --password={{ docker_pusher_password }} --insecure-skip-tls-verify --server={{ openshift_master }}
-
-     - name: Get Docker Pusher's Token
-       command: oc whoami --token=true
-       register: docker_pusher_token
-
-     - name: Return to a System Admin User
-       command: oc login --username=system:admin --insecure-skip-tls-verify --server={{ openshift_master }}
 
      - name: Log into Docker's using the token
        command: docker login --username {{ docker_pusher_user }} --email {{ docker_pusher_user }}@abc.com --password {{ docker_pusher_token.stdout }} {{ docker_registry }}

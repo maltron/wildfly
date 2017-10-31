@@ -1,6 +1,14 @@
 FROM anapsix/alpine-java:jre8
 MAINTAINER Mauricio "Maltron" Leal <maltron@gmail.com>
 
+LABEL io.k8s.description="WildFly Appplication Server" \
+      io.k8s.display-name="WildFly 10.1.0" \
+      io.openshift.expose-services="8080:wildfly" \
+      io.openshift.tags="appserver,j2ee,java" \
+      # this label tells s2i where to find its mandatory scripts
+      # (run, assemble, save-artifacts)
+      io.openshift.s2i.scripts-url="image:///usr/libexec/s2i"
+
 ENV JBOSS_HOME=/opt/java/server/as/wildfly \
     GROUP_ID=1001 \
     USER_ID=1001 \
@@ -83,7 +91,14 @@ exec \$JBOSS_HOME/bin/standalone.sh -c standalone.xml -b 0.0.0.0 -bmanagement 12
     sed -i "/        <subsystem xmlns=\"urn:jboss:domain:deployment-scanner:2.0\">/a \ \ \ \ \ \ \ \ \ \ \ \ <deployment-scanner name=\"deployments-exploded\" path=\"deployments-exploded\" relative-to=\"jboss.server.base.dir\" scan-enabled=\"true\" scan-interval=\"5000\" auto-deploy-zipped=\"false\" auto-deploy-exploded=\"true\" deployment-timeout=\"60\"/>" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 ### Wildfly: 
 ### Clean Up
-    rm -rf wildfly-${WILDFLY_VERSION}.zip && rm -rf ${WILDFLY_VERSION}
+    rm -rf wildfly-${WILDFLY_VERSION}.zip && rm -rf ${WILDFLY_VERSION} && \
+### Create all the necessary scripts for S2I and give the proper permissions
+    mkdir -p /usr/libexec/s2i && \
+#    printf "#!/bin/sh\n\
+#mv /tmp/src/*.war /usr/local/tomcat/webapps" > /usr/libexec/s2i/assemble && \
+    printf "#!/bin/sh\n\
+mv /tmp/src/*.war ${JBOSS_HOME}/standalone/deployments" > /usr/libexec/s2i/run && \
+    chmod 755 /usr/libexec/s2i/*
 
 EXPOSE 8080
 WORKDIR ${JBOSS_HOME}
