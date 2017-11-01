@@ -94,13 +94,13 @@ exec \$JBOSS_HOME/bin/standalone.sh -c standalone.xml -b 0.0.0.0 -bmanagement 12
     rm -rf wildfly-${WILDFLY_VERSION}.zip && rm -rf ${WILDFLY_VERSION} && \
 ### Create all the necessary scripts for S2I and give the proper permissions
     mkdir -p /usr/libexec/s2i && \
-#    printf "#!/bin/sh\n\
-#mv /tmp/src/*.war /usr/local/tomcat/webapps" > /usr/libexec/s2i/assemble && \
     printf "#!/bin/sh\n\
-mv /tmp/src/*.war ${JBOSS_HOME}/standalone/deployments" > /usr/libexec/s2i/run && \
+mv /tmp/src/*.war ${JBOSS_HOME}/standalone/deployments" > /usr/libexec/s2i/assemble && \
+    printf "#!/bin/sh\n\
+exec /opt/java/server/as/wildfly/bin/openshift-launch.sh\n" > /usr/libexec/s2i/run && \
     chmod 755 /usr/libexec/s2i/*
 
 EXPOSE 8080
 WORKDIR ${JBOSS_HOME}
-USER wildfly
+USER ${USER_ID}
 CMD ["/opt/java/server/as/wildfly/bin/openshift-launch.sh"]
