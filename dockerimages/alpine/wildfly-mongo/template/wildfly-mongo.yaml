@@ -120,7 +120,7 @@ objects:
     - imageChangeParams:
         automatic: true
         containerNames:
-        - ${APPLICATION_NAME}
+        - ${APPLICATION_NAME}-app
         from:
           kind: ImageStreamTag
           name: ${APPLICATION_NAME}-app:latest
