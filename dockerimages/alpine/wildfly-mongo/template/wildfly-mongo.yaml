@@ -6,23 +6,66 @@ message: You can connect to the database using MongoDB connection URL mongodb://
 objects:
 ### Application Layer: WildFly
 - apiVersion: v1
-  kind: Service
+  kind: ImageStream
   metadata:
-    annotations:
-      service.alpha.openshift.io/dependencies: '[{"name":"${APPLICATION_NAME}-data","namespace":"","kind":"Service"}]'
-      description: The web server's http port.
+    labels:
+      component: application-server
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}-app
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      component: application-server
+      application: ${APPLICATION_NAME}
+    name: wildfly-alpine
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - from:
+        kind: DockerImage
+        name: docker.io/maltron/wildfly-alpine:latest
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: Source
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
     labels:
       component: application-server
       application: ${APPLICATION_NAME}
     name: ${APPLICATION_NAME}-app
   spec:
-    ports:
-    - port: 8080
-      targetPort: 8080
-    selector:
-      component: application-server
-      application: ${APPLICATION_NAME}
-      deploymentConfig: ${APPLICATION_NAME}-app
+    failedBuildsHistoryLimit: 5
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APPLICATION_NAME}-app:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      binary: {}
+      type: Binary
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: wildfly-alpine:latest
+      type: Source
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: ${GITHUB_WEBHOOK_SECRET}
+      type: GitHub
+    - generic:
+        secret: ${GENERIC_WEBHOOK_SECRET}
+      type: Generic
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -68,11 +111,39 @@ objects:
             value: ${BROKER_QUEUES}
           image: docker.io/maltron/wildfly-alpine:latest
           imagePullPolicy: IfNotPresent
-          name: wildfly-mongo-alpine
+          name: ${APPLICATION_NAME}-app
           ports:
           - containerPort: 8080
             name: http
             protocol: TCP
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APPLICATION_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${APPLICATION_NAME}-app:latest
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.alpha.openshift.io/dependencies: '[{"name":"${APPLICATION_NAME}-data","namespace":"","kind":"Service"}]'
+      description: The web server's http port.
+    labels:
+      component: application-server
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}-app
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      component: application-server
+      application: ${APPLICATION_NAME}
+      deploymentConfig: ${APPLICATION_NAME}-app
 - apiVersion: v1
   id: ${APPLICATION_NAME}-app
   kind: Route
@@ -227,6 +298,18 @@ parameters:
   description: Queues names, separated by commas. These topics will be automatically
     created when the broker starts.
   value: exampleQueue
+- description: GitHub trigger secret
+  displayName: Github Webhook Secret
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  name: GITHUB_WEBHOOK_SECRET
+  required: true
+- description: Generic build trigger secret
+  displayName: Generic Webhook Secret
+  from: '[a-zA-Z0-9]{8}'
+  generate: expression
+  name: GENERIC_WEBHOOK_SECRET
+  required: true
 
 
 
