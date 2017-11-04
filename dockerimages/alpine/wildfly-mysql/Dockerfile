@@ -1,6 +1,14 @@
 FROM anapsix/alpine-java:jre8
 MAINTAINER Mauricio "Maltron" Leal <maltron@gmail.com>
 
+LABEL io.k8s.description="WildFly Appplication Server" \
+      io.k8s.display-name="WildFly 10.1.0" \
+      io.openshift.expose-services="8080:wildfly" \
+      io.openshift.tags="appserver,j2ee,java" \
+      # this label tells s2i where to find its mandatory scripts
+      # (run, assemble, save-artifacts)
+      io.openshift.s2i.scripts-url="image:///usr/libexec/s2i"
+
 ENV JBOSS_HOME=/opt/java/server/as/wildfly \
     GROUP_ID=1001 \
     USER_ID=1001 \
@@ -21,6 +29,9 @@ RUN addgroup -S ${USER} -g ${GROUP_ID} && adduser -u ${USER_ID} -S -G ${USER} -h
     mkdir -p ${JBOSS_HOME}/standalone/log/ && touch ${JBOSS_HOME}/standalone/log/server.log && \
     mkdir -p ${JBOSS_HOME}/standalone/deployments-exploded/ROOT.war && \
     chown -R wildfly:wildfly ${JBOSS_HOME} && chgrp -R wildfly ${JBOSS_HOME} && chmod -R 777 ${JBOSS_HOME}/standalone && \
+### WildFly: Add some users for Security experimentation
+    echo "redhat=guest" >> ${JBOSS_HOME}/standalone/configuration/application-roles.properties && \
+    echo "redhat=a61461431d8a3a52ea041ea5d25dcbc2" >> ${JBOSS_HOME}/standalone/configuration/application-users.properties && \
 ### MySQL: Create directory, move the jar file and create all the necessary content
     mkdir -p ${JBOSS_HOME}/modules/com/mysql/main/ && \
     mv /mysql-connector-java-5.1.40/mysql-connector-java-5.1.40-bin.jar ${JBOSS_HOME}/modules/com/mysql/main/ && \
@@ -34,6 +45,13 @@ RUN addgroup -S ${USER} -g ${GROUP_ID} && adduser -u ${USER_ID} -S -G ${USER} -h
     sed -i "s/<#NEWLINE>/\n/g" ${JBOSS_HOME}/standalone/configuration/standalone.xml && \
 ### Adjust all the necessary permissions
 #    chown -R wildfly:wildfly ${JBOSS_HOME} && chmod -R 777 ${JBOSS_HOME}/standalone && \
+### Create all the necessary scripts for S2I and give the proper permissions
+    mkdir -p /usr/libexec/s2i && \
+    printf "#!/bin/sh\n\
+mv /tmp/src/*.war ${JBOSS_HOME}/standalone/deployments" > /usr/libexec/s2i/assemble && \
+    printf "#!/bin/sh\n\
+exec /opt/java/server/as/wildfly/bin/standalone.sh -b 0.0.0.0\n" > /usr/libexec/s2i/run && \
+    chmod 755 /usr/libexec/s2i/* && \
 ### Clean Up
 #    sed -i '2i JAVA_HOME=/usr/java/jdk1.8.0_112' ${JBOSS_HOME}/bin/standalone.sh && \
 #    sed -i '3i JBOSS_HOME=/opt/java/server/as/wildfly' ${JBOSS_HOME}/bin/standalone.sh && \
@@ -41,5 +59,5 @@ RUN addgroup -S ${USER} -g ${GROUP_ID} && adduser -u ${USER_ID} -S -G ${USER} -h
 
 EXPOSE 8080
 WORKDIR ${JBOSS_HOME}
-USER wildfly
+USER ${USER_ID}
 CMD ["/opt/java/server/as/wildfly/bin/standalone.sh","-b","0.0.0.0"]
