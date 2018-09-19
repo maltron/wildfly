@@ -26,6 +26,7 @@ ENV TERM xterm
 ENV WILDFLY_VERSION 10.1.0.Final
 ENV WILDFLY_SHA1 9ee3c0255e2e6007d502223916cefad2a1a5e333
 ENV JBOSS_HOME=/home/user/wildfly-$WILDFLY_VERSION
+ENV PATH=${PATH}:${JBOSS_HOME}/bin
 
 # Add the WildFly distribution to /opt, and make wildfly the owner of the extracted tar content
 # Make sure the distribution is available from a well-known place
